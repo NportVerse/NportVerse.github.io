@@ -1,0 +1,316 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Mobile Test</title>
+</head>
+<body> 
+<H1>Link Test</H1>
+<label>Normal Anchor: </label><a href="popup.html">same page</a><br>
+<label>Window Open: </label><a id="wopen" href="_blank">another page</a><br>
+
+<!-- https://en.wikipedia.org/wiki/List_of_URI_schemes -->
+<!-- https://developer.mozilla.org/en-US/docs/Web/API/Navigator/registerProtocolHandler -->
+<!-- https://beradrian.wordpress.com/2010/01/15/special-links/ -->
+<!-- apple app store https://developer.apple.com/forums/thread/104915 -->
+<label>Tel: </label><a href="tel:+821000000000">telephone</a><br>
+<label>SMS: </label><a href="sms:+821000000000?body=hello">sms</a><br>
+<label>SMSTO: </label><a href="smsto:+821000000000">smsto</a><br>
+<label>MMS: </label><a href="mms:+821000000000">mms</a><br>
+<label>MMSTO: </label><a href="mmsto:+821000000000">mmsto</a><br>
+<label>Mail: </label><a href="mailto:abc@abcdefg.com?subject=test&body=test">mail</a><br>
+<!-- details?id=Package_name, search?q=Search_Query, search?q=pub:Publisher_Name -->
+<label>Google Play: </label><a href="market://details?id=com.android.chrome">google play chrome</a><br>
+<label>Google Play Publisher: </label><a href="market://search?q=pub:Google LLC&c=apps">google apps</a><br>
+<label>Apple App Store: </label><a href="itms-apps://itunes.apple.com/app/id">app store</a><br>
+<!-- pdf download or view -->
+<label>PDF: </label><a href="test.pdf">pdf file</a><br>
+<label>OTP: </label><a href="otpauth://totp/TEST?secret=ACQOUA72D3YFA4E5UORXZTKHJ2XL3WIZ"></a><br>
+
+<button id="getFcmToken">getFcmToken</button><span id="fcmToken"></span><br>
+<button id="getTID">getTID</button><span id="tid"></span><br>
+<button id="clearBadge">clearBadge</button><br>
+
+<button id="writeClipboard">writeClipboard</button><br>
+
+<script>
+const btn = document.querySelector('#writeClipboard');
+btn.onclick = async () => {
+	await navigator.clipboard.writeText("text to copy");
+};
+</script>
+
+
+<script>
+//(() => {
+//    if (window.nportverse) {
+//        console.log('nportverse already assigned')
+//        return;
+//    }
+//    
+//    //console.log(`nportverse is not yet assigned ${'$'}nportverse`)
+//    
+//    class _nportverse_bridge_t {
+//        static init()
+//        {
+//            // onPageStarted() may be too early to access _nportverse
+//            if (!window._nportverse) {
+//                console.log('global _nportverse is not yet assigned')
+//                Object.defineProperty(window, '_nportverse', {
+//                    set: function(val) {
+//                        console.log('global _nportverse assigned!!!');
+//                        this.__nportverse = val;
+//                        window.nportverse = new Proxy(
+//                            val,
+//                            new this()
+//                        );
+//                    },
+//                    get: function() {
+//                        return this.__nportverse;
+//                    }
+//                });
+//            }
+//            else {
+//                console.log('global _nportverse already exists!!!');
+//                window.nportverse = new Proxy(
+//                    window._nportverse,
+//                    new this()
+//                );
+//            }
+//        }
+//        
+//        constructor()
+//        {
+//            this._async_funcs = new Set(JSON.parse(_nportverse?._async_func_names()) || []);
+//            this._async_promises = new Map();
+//            this._cur_id = 1;
+//
+//            this._cache = {};
+//        }
+//        
+//        _resolve(call_id, val)
+//        {
+//            //console.log('nportverse._resolve called!!', val);
+//            //console.log(this);
+//
+//            //const self = _nportverse_bridge_t._inst;
+//            //const self = this;
+//
+//            const prom = this._async_promises.get(call_id);
+//            if (!prom) return;
+//            this._async_promises.delete(call_id);
+//
+//            if (val) {
+//                //console.log("val", val);
+//                val = JSON.parse(val);
+//            }
+//
+//            prom.resolve(val);
+//        }
+//        
+//        _reject(call_id, err)
+//        {
+//            //const self = _nportverse_bridge_t._inst;
+//            //const self = this;
+//
+//            const prom = this._async_promises.get(call_id);
+//            if (!prom) return;
+//            this._async_promises.delete(call_id);
+//
+//            if (val) {
+//                val = new Error(JSON.parse(val));
+//            }
+//
+//            prom.reject(val);
+//        }
+//
+//	// general callback!!!
+//	_callback(call_id, val)
+//	{
+//	}
+//        
+//        get(target, prop)
+//        {
+//            if (['_resolve', '_reject'].includes(prop)) {
+//                if (!this._cache[prop]) {
+//                    this._cache[prop] = (...args) => this[prop](...args);
+//                }
+//                return this._cache[prop];
+//            }
+//
+//            if (!this._async_funcs.has(prop)) {
+//                if (!this._cache[prop]) {
+//                    if (!_nportverse || !_nportverse[prop]) {
+//                        return (...args) => '';
+//                    }
+//                    else {
+//                        this._cache[prop] = (...args) => _nportverse[prop](...args);
+//                    }
+//                }
+//                return this._cache[prop];
+//            }
+//
+//            // async function
+//            const self = this;
+//            return (...args) => {
+//                return new Promise((resolve, reject) => {
+//                    const call_id = self._cur_id++;
+//                    self._async_promises.set(call_id, {
+//                        resolve,
+//                        reject
+//                    });
+//
+//                    const params = [call_id];
+//                    if (args.length) {
+//                        params.push(JSON.stringify(args));
+//                    }
+//                    _nportverse[prop](...params);
+//                });
+//            }
+//        }
+//    }
+//    
+//    _nportverse_bridge_t.init();
+//})();
+</script>
+
+
+
+<script>
+const wopen = document.querySelector('#wopen');
+wopen.addEventListener('click', e => {
+	e.preventDefault();
+	//window.location = "popup.html";
+	// this must work! but it doesn't in the assets folder
+	window.open("popup.html");
+//	const cur_url = location.href;
+//	const popup_url = `${cur_url.substring(0, cur_url.lastIndexOf('/') + 1)}popup.html`;
+//	window.open(popup_url);
+});
+
+
+const getFcmToken_btn = document.querySelector('#getFcmToken');
+const fcmToken_win = document.querySelector('#fcmToken');
+//getFcmToken_btn.disabled = true;
+
+const getTID_btn = document.querySelector('#getTID');
+const tid_win = document.querySelector('#tid');
+
+const clearBadge_btn = document.querySelector('#clearBadge');
+
+if (_nportverse?.init) {
+	window.onnative = async () => {
+		delete window.onnative;
+
+		// app version string
+		// no exception
+		console.log(`app version: ${nportverse.version()}`);
+		// os: {'android': 'ios'}
+		// no exception
+		console.log(`os: ${nportverse.os()}`);
+		// os version string
+		// android ex) '33' -> android 13
+		// ios ex) ?
+		// no exception
+		console.log(`os version: ${nportverse.os_version()}`);
+
+		getFcmToken_btn.onclick = async () => {
+			// reval: token string
+			// exception: communication, ...
+			const token = await nportverse.getFcmToken();
+			fcmToken_win.innerText = token;
+		};
+
+		getTID_btn.onclick = () => {
+			const tid = nportverse.getTID();
+			tid_win.innerText = tid;
+		};
+
+		clearBadge_btn.onclick = () => {
+			nportverse.setBadgeNumber(0);
+		};
+
+		document.querySelector('#writeClipboard').onclick = async () => {
+			//await navigator.clipboard.writeText("text to copy");
+			nportverse.writeToClipboard("text to copy");
+		};
+
+
+		//
+		// events
+		//
+		// N.B. Do not await any async function before installing listeners in this callback.
+		// An event may be triggered while awaiting!!!!
+		nportverse.on('FCM:data', data => {
+			// JSON
+			console.log('FCM:data', data);
+		});
+
+		nportverse.on('FCM:token', token => {
+			// new token (intial or updated)
+			// string
+			console.log('FCM:token', token);
+		});
+
+		// topic stuff
+		try {
+			// reval: result boolean
+			// exception: communication, ...
+			console.log(`subscribe 'test': ${await nportverse.subscribeTopic('test')}`);
+			console.log(`unsubscribe 'test': ${await nportverse.unsubscribeTopic('test')}`);
+		}
+		catch (e) {
+			console.error(`(un)subscribe error: ${e}`);
+		}
+
+
+		// Android specific stuff
+		// 
+		if (!nportverse.isGrantedNotificationPermission()) {
+
+			console.log(`FCM permission request: ${await nportverse.askNotificationPermission()}`);
+		}
+
+	};
+
+	_nportverse.init('onnative');
+
+	console.log(`nportverse: ${window.nportverse?.version()}`);
+}
+else {
+	getFcmToken_btn.disabled = true;
+	getTID_btn.disabled = true;
+}
+
+
+////window.onload = (ev) => {
+//if (window.nportverse?.version) {
+//	getFcmToken_btn.onclick = async () => {
+//		const token = await nportverse.getFcmToken();
+//		fcmToken_win.innerText = token;
+//	}
+//}
+//else {
+//	getFcmToken_btn.disabled = true;
+//}
+////}
+//
+////(async ()=> {
+////	await nportverse.subscribeTopic('all');
+////})();
+//
+//nportverse.on('FCM:data', data => {
+//	// JSON
+//	console.log('FCM:data', data);
+//});
+//
+//nportverse.on('FCM:token', token => {
+//	// string
+//	console.log('FCM:token', token);
+//});
+
+
+</script>
+</body>
+</html>

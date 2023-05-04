@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1.0">
+
+	<!-- https://github.com/faurelia/simple-modal-view -->
+	<link type="text/css" href="deps/modal.css" rel="stylesheet">
+	<script type="application/javascript" src="deps/modal.js"></script>
+
+	<!-- qr code decoders: https://openbase.com/categories/js/best-javascript-qr-code-scanner-libraries -->
+	<!-- https://github.com/cozmo/jsQR -->
+	<!-- cdn comparison: https://w3techs.com/technologies/comparison/cd-jquerycdn,cd-jsdelivr,cd-unpkga -->
+	<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+	<!-- <script src=""></script> -->
+	<title>Mobile Test</title>
+</head>
+
+<body>
+	<H1>Mobile Test</H1>
+	<label>Normal Anchor: </label><a href="popup.html">same window</a><br>
+	<label>Window Open: </label><a id="wopen" href="_blank">another window</a><br>
+	<!-- https://en.wikipedia.org/wiki/List_of_URI_schemes -->
+	<!-- https://developer.mozilla.org/en-US/docs/Web/API/Navigator/registerProtocolHandler -->
+	<!-- https://beradrian.wordpress.com/2010/01/15/special-links/ -->
+	<!-- apple app store https://developer.apple.com/forums/thread/104915 -->
+	<label>Tel: </label><a href="tel:+821000000000">telephone</a><br>
+	<label>SMS: </label><a href="sms:+821000000000?body=hello">sms</a><br>
+	<label>SMSTO: </label><a href="smsto:+821000000000">smsto</a><br>
+	<label>MMS: </label><a href="mms:+821000000000">mms</a><br>
+	<label>MMSTO: </label><a href="mmsto:+821000000000">mmsto</a><br>
+	<label>Mail: </label><a href="mailto:abc@abcdefg.com?subject=test&body=test">mail</a><br>
+	<!-- details?id=Package_name, search?q=Search_Query, search?q=pub:Publisher_Name -->
+	<label>Google Play: </label><a href="market://details?id=com.android.chrome">google play chrome</a><br>
+	<label>Google Play Publisher: </label><a href="market://search?q=pub:Google LLC&c=apps">google apps</a><br>
+	<!-- https://developer.chrome.com/docs/multidevice/android/intents/ -->
+	<!-- https://stackoverflow.com/questions/37069816/deep-linking-not-working-in-chrome -->
+	<!-- This is a known wontfix bug in Chrome 40+ -->
+	<!-- Our app available only -->
+	<label>Android Intent: </label><a
+		href="intent:#Intent;action=android.intent.action.SEND;type=text/plain;S.android.intent.extra.TEXT=Send%20Message%20by%20any%20any%20app;end">Send
+		Message by any app</a><br>
+	<label>Apple App Store: </label><a href="itms-apps://itunes.apple.com/app/id">app store</a><br>
+	<!-- pdf download or view -->
+	<label>PDF: </label><a href="test.pdf">pdf file</a><br>
+	<!-- https://github.com/google/google-authenticator/wiki/Key-Uri-Format -->
+	<!-- https://github.com/google/google-authenticator-android/issues/54 -->
+	<label>OTP: </label><a href="otpauth://totp/TEST?secret=ACQOUA72D3YFA4E5UORXZTKHJ2XL3WIZ">otpauth</a><br>
+	<label>App Version: </label><span id='app_version'>Unknown</span><br>
+	<!-- https://docs.walletconnect.org/mobile-linking -->
+	<label>Wallet Connect (connect): </label><a
+		href="wc:594d7b04-b4e6-4f14-a559-7c5e951e9e1a@1?bridge=https%3A%2F%2Fbridge.walletconnect.org&amp;key=9ea9d07d41a59a1dbb69b2dd50e2c455f5faec2092543d471bc14638e6084125">Connect</a><br>
+	<label>Wallet Connect (sign): </label><a href="wc:594d7b04-b4e6-4f14-a559-7c5e951e9e1a@1">Sign</a><br>
+
+	<!--
+<button onclick="openCamera()">Turn on Camera</button><br>
+-->
+
+	<button id="cam" data-target="cam_view" data-toggle="modal">Scan QR Code</button><br>
+	<label>Scanned Code: </label><span id="scanned_code"></span><br>
+
+	<!-- modal dialog ---------------------------------------------------------->
+	<div id="cam_view" class="modal">
+		<canvas id="canvas" hidden></canvas>
+		<div class="modal-window">
+			<button id="stop_capture" data-dismiss="modal">Cancel</button>
+		</div>
+	</div>
+
+	<!-- Download PNG ---------------------------------------------------------->
+	<div>
+		<label>Download PNG file: </label>
+		<button onclick="downloadPng()">Download PNG</button>
+	</div>
+	<!-- Download XLSX ---------------------------------------------------------->
+	<div style="margin-top: 0.5%; margin-bottom: 0.1%;">
+		<label>Download Xlsx File: </label>
+		<button id="download-btn" onclick="downloadFile()">Download XLSX file</button>
+	</div>
+
+	<!-- Cliboard Access ---------------------------------------------------------->
+	<div style="margin-top: 0.5%; margin-bottom: 0.1%;">
+		<label>Copy to Clipboard: </label>
+		<!-- <p id="myText">Hello World</p> -->
+		<button id="download-btn" onclick="copyContent()">Click to Copy</button>
+	</div>
+	<script>
+		//
+		// Popup
+		//
+		const wopen = document.querySelector('#wopen');
+		wopen.addEventListener('click', e => {
+			e.preventDefault();
+			//window.location = "popup.html";
+			window.open("popup.html");
+		});
+
+		//
+		// App Version
+		//
+		if (window.funnyfig?.version) {
+			document.querySelector('#app_version').innerText = funnyfig.version();
+		}
+		else {
+			document.querySelector('#app_version').innerText = 'Unknown';
+		}
+
+		//
+		// Capture Cam
+		// https://github.com/cozmo/jsQR
+		// https://cozmo.github.io/jsQR/
+		//
+		// https://developers.google.com/web/fundamentals/media/capturing-images
+		// https://developer.mozilla.org/en-US/docs/Web/HTML/Element/video
+		// https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement
+		const scanner = {
+			video: document.createElement('video'),
+			canvas: document.querySelector('#canvas'),
+			scanned_code: document.querySelector('#scanned_code'),
+
+			async start() {
+				try {
+					const stream = await navigator.mediaDevices.getUserMedia({
+						// rear cam
+						//video: { facingMode: {exact: 'environment'}}
+						video: { facingMode: 'environment' }
+					});
+
+					this.video.srcObject = stream;
+					this.video.setAttribute('playsinline', true);
+					this.video.play();
+
+					this.procFrame = () => this._proc_try_capture();
+					this.procFrame();
+				}
+				catch (err) {
+					alert('Camera is unavailable');
+					throw err;
+				}
+			},
+
+			stop() {
+				this.procFrame = () => this._proc_stop();
+			},
+
+			_proc_try_capture() {
+				if (this.video.readyState === this.video.HAVE_ENOUGH_DATA) {
+					this.canvas.hidden = false;
+
+					this.canvas.width = this.video.videoWidth;
+					this.canvas.height = this.video.videoHeight;
+
+					const canv = this.canvas.getContext('2d');
+					canv.drawImage(this.video
+						, 0, 0
+						, this.canvas.width, this.canvas.height);
+					const img = canv.getImageData(
+						0, 0, this.canvas.width, this.canvas.height);
+					const code = jsQR(img.data, img.width, img.height, {
+						inversionAttempts: 'dontInvert',
+					});
+
+					if (code) {
+						this.scanned_code.innerText = code.data;
+						this.stop();
+						// close modal
+						const event = new MouseEvent('click', {
+							view: window,
+							bubbles: true,
+							cancelable: false
+						});
+						document.querySelector('#stop_capture').dispatchEvent(event);
+					}
+				}
+
+				requestAnimationFrame(this.procFrame);
+			},
+			_proc_stop() {
+				this.video.pause();
+				this.video.srcObject.getVideoTracks().forEach(track => track.stop());
+			}
+		};
+
+		document.querySelector('#stop_capture').onclick = () => {
+			scanner.stop();
+		};
+
+
+		document.querySelector('#cam').addEventListener('click', () => {
+			scanner.start();
+		});
+
+		//PNG Download
+		function downloadPng() {
+			const canvas = document.createElement('canvas');
+			canvas.width = 256;
+			canvas.height = 256;
+
+			const ctx = canvas.getContext('2d');
+			const img = new Image();
+			img.onload = () => {
+				ctx.drawImage(img, 0, 0);
+				const dataURL = canvas.toDataURL('image/png');
+				// const downloadLink = document.getElementById('download-link');
+				// downloadLink.href = dataURL;
+				const anchorlink = document.createElement("a");
+				anchorlink.href = dataURL;
+				anchorlink.setAttribute("download", "circle.png")
+				// anchorlink.target = '_blank';
+				document.body.appendChild(anchorlink)
+				anchorlink.click()
+			};
+			img.onerror = (error) => {
+				console.error(`Error loading image: ${error}`);
+			};
+			img.src = './circle.png';
+
+			document.addEventListener('DOMContentLoaded', () => {
+				const downloadLink = document.getElementById('download-link');
+				if (!downloadLink || !downloadLink.href) {
+					console.error('Download link not found or invalid');
+				}
+			});
+		}
+
+		//XLSX Download
+		function downloadFile() {
+			const fileUrl = 'myfile.xlsx';
+			fetch(fileUrl)
+				.then(response => response.blob())
+				.then(blob => {
+					const blobUrl = URL.createObjectURL(blob);
+					const downloadBtn = document.createElement("a");
+					downloadBtn.href = blobUrl;
+					downloadBtn.download = 'DownloadFile.xlsx';
+					document.body.appendChild(downloadBtn)
+					downloadBtn.click()
+				});
+		}
+
+		//Cliboard Access
+		function copyContent() {
+			// Get the text to copy.
+			const text = "Hello World!";
+
+			// Check if the browser supports the Clipboard API.
+			if (typeof navigator.clipboard !== 'undefined') {
+				// Copy the text to the clipboard.
+				navigator.clipboard.writeText(text).then(() => {
+					// Success!
+					console.log('Content copied to clipboard.');
+				}, (err) => {
+					// Error!
+					console.log('Failed to copy: ', err);
+				});
+			} else {
+				// The browser does not support the Clipboard API.
+				console.log('The browser does not support the Clipboard API.');
+			}
+		};
+
+	</script>
+</body>
+
+</html>
